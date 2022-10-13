@@ -5,27 +5,33 @@ type AnticipatorConfig = {
   anticipateCadence: number;
   defaultCadence: number;
 };
+//Defines data entry types for anticipation
 
 type SlotCoordinate = {
   column: number;
   row: number;
 };
+//Coordinates of a special symbol
 
 type SpecialSymbol = { specialSymbols: Array<SlotCoordinate> };
+// Array with the coordinates of all special symbols of the round
 
 type RoundsSymbols = {
   roundOne: SpecialSymbol;
   roundTwo: SpecialSymbol;
   roundThree: SpecialSymbol;
 };
+//Defines data entry types for each round
 
 type SlotCadence = Array<number>;
+//Defines the data output types for a round
 
 type RoundsCadences = {
   roundOne: SlotCadence;
   roundTwo: SlotCadence;
   roundThree: SlotCadence;
 };
+//Define data output types for each round
 
 /**
  * Anticipator configuration. Has all information needed to check anticipator.
@@ -71,7 +77,11 @@ const gameRounds: RoundsSymbols = {
 /**
  * This must be used to get all game rounds cadences.
  */
-const slotMachineCadences: RoundsCadences = { roundOne: [], roundTwo: [], roundThree: [] };
+const slotMachineCadences: RoundsCadences = {
+  roundOne: [],
+  roundTwo: [],
+  roundThree: [],
+};
 
 /**
  * This function receives an array of coordinates relative to positions in the slot machine's matrix.
@@ -81,8 +91,23 @@ const slotMachineCadences: RoundsCadences = { roundOne: [], roundTwo: [], roundT
  * @returns SlotCadence Array of numbers representing the slot machine stop cadence.
  */
 function slotCadence(symbols: Array<SlotCoordinate>): SlotCadence {
-  // Magic
-  return [];
+  //Defining the initial value of the array as 0, because the cadence only changes in the next column of the column with the special symbol
+  const cadence: SlotCadence = [0];
+
+  //Initialized the values that will later be used to define the interval that will undergo the anticipation of the cadence.  
+  const startAnticipate: number = symbols[anticipatorConfig.minToAnticipate - 1]?.column
+  const endAnticipate:  number = symbols[anticipatorConfig.maxToAnticipate - 1]?.column
+
+  //The for loop should only perform 4 pushes in this 5-column example, as the first value has already been set to 0
+  for(let i=0; i< anticipatorConfig.columnSize-1; i++){
+    /* If the current column is within the interval of anticipation, the cadence is set to the value of the anticipation cadence
+    Also the symbols that define the start and end of the anticipation cannot be in the same column */
+    startAnticipate <= i && (!endAnticipate ||endAnticipate > i) && startAnticipate !== endAnticipate ?
+      cadence.push(anticipatorConfig.anticipateCadence + cadence[i])
+    :
+      cadence.push(anticipatorConfig.defaultCadence + cadence[i])
+  }
+  return cadence;
 }
 
 /**
@@ -93,9 +118,11 @@ function slotCadence(symbols: Array<SlotCoordinate>): SlotCadence {
 function handleCadences(rounds: RoundsSymbols): RoundsCadences {
   slotMachineCadences.roundOne = slotCadence(rounds.roundOne.specialSymbols);
   slotMachineCadences.roundTwo = slotCadence(rounds.roundTwo.specialSymbols);
-  slotMachineCadences.roundThree = slotCadence(rounds.roundThree.specialSymbols);
+  slotMachineCadences.roundThree = slotCadence(
+    rounds.roundThree.specialSymbols
+  );
 
   return slotMachineCadences;
 }
 
-console.log('CADENCES: ', handleCadences(gameRounds));
+console.log("CADENCES: ", handleCadences(gameRounds));
